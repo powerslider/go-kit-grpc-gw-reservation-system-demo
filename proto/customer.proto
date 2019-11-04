@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+import "google/api/annotations.proto";
+import "protoc-gen-swagger/options/annotations.proto";
+import "gogoproto/gogo.proto";
+
+
+option go_package = "proto";
+
+
+message Customer {
+    int64 customer_id = 1;
+    string first_name = 2;
+    string last_name = 3;
+    string email = 4;
+    string phone = 5;
+    int64 created = 6;
+    int64 last_updated = 7;
+}
+
+message GetAllCustomersRequest {
+    uint64 limit = 1;
+    uint64 offset = 2;
+}
+
+message GetAllCustomersResponse {
+    repeated Customer customers = 1 [(gogoproto.nullable) = false];
+    string err = 2;
+}
+
+message GetCustomerByIDRequest {
+    int64 customer_id = 1;
+}
+
+message GetCustomerByIDResponse {
+    Customer customer = 1;
+    string err = 2;
+}
+
+message RegisterCustomerRequest {
+    Customer customer = 1;
+}
+
+message RegisterCustomerResponse {
+    Customer customer = 1;
+    string err = 2;
+}
+
+message UnregisterCustomerRequest {
+    int64 customer_id = 1;
+}
+
+message UnregisterCustomerResponse {
+    string err = 1;
+}
+
+service CustomerService {
+    rpc RegisterCustomer (RegisterCustomerRequest) returns (RegisterCustomerResponse) {
+        option (google.api.http) = {
+			post: "/customer"
+			body: "*"
+		};
+        option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+            summary: "Register a new Customer"
+            description: "Register a new Customer"
+            tags: "customer"
+        };
+    };
+    rpc UnregisterCustomer (UnregisterCustomerRequest) returns (UnregisterCustomerResponse) {
+        option (google.api.http) = {
+			delete: "/customer/{customer_id}"
+		};
+        option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+            summary: "Unregister an existing customer"
+            description: "Unregister an existing customer"
+            tags: "customer"
+        };
+    }
+    rpc GetAllCustomers (GetAllCustomersRequest) returns (GetAllCustomersResponse) {
+        option (google.api.http) = {
+			get: "/customers"
+		};
+        option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+            summary: "List existing customers"
+            description: "List existing customers"
+            tags: "customer"
+        };
+    }
+    rpc GetCustomerByID (GetCustomerByIDRequest) returns (GetCustomerByIDResponse) {
+        option (google.api.http) = {
+			get: "/customer/{customer_id}"
+		};
+        option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+            summary: "Get an existing customer"
+            description: "Get an existing customer"
+            tags: "customer"
+        };
+    }
+}

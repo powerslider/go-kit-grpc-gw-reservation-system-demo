@@ -33,14 +33,6 @@ type unregisterCustomerResponse struct {
 
 func (r unregisterCustomerResponse) HTTPError() error { return r.Err }
 
-// UnregisterCustomer godoc
-// @Summary Unregister an existing customer
-// @Description Unregister an existing customer
-// @Tags customer
-// @Param id path string true "Customer ID"
-// @Accept  json
-// @Produce  json
-// @Router /customer/{id} [delete]
 func MakeUnregisterCustomerEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(unregisterCustomerRequest)
@@ -62,15 +54,6 @@ type registerCustomerResponse struct {
 
 func (r registerCustomerResponse) HTTPError() error { return r.Err }
 
-// RegisterCustomer godoc
-// @Summary Register a new Customer
-// @Description Register a new Customer
-// @Tags customer
-// @Param customer body customer.Customer true "New Customer"
-// @Accept  json
-// @Produce  json
-// @Success 200 {object} customer.Customer
-// @Router /customer [post]
 func MakeRegisterCustomerEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(registerCustomerRequest)
@@ -94,16 +77,6 @@ type getAllCustomersResponse struct {
 
 func (r getAllCustomersResponse) HTTPError() error { return r.Err }
 
-// GetAllCustomers godoc
-// @Summary List existing customers
-// @Description List existing customers
-// @Tags customer
-// @Param limit query int false "Customer count limit" default(100)
-// @Param offset query int false "Customer count offset" default(0)
-// @Accept  json
-// @Produce  json
-// @Success 200 {array} customer.Customer
-// @Router /customers [get]
 func MakeGetAllCustomersEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(getAllCustomersRequest)
@@ -123,26 +96,18 @@ type getCustomerByIDRequest struct {
 }
 
 type getCustomerByIDResponse struct {
-	Customer proto.Customer `json:"customer,omitempty"`
-	Err      error          `json:"err,omitempty"`
+	Customer *proto.Customer `json:"customer,omitempty"`
+	Err      error           `json:"err,omitempty"`
 }
 
 func (r getCustomerByIDResponse) HTTPError() error { return r.Err }
 
-// GetCustomerByID godoc
-// @Summary Get an existing customer
-// @Description Get an existing customer
-// @Tags customer
-// @Param id path string true "Customer ID"
-// @Accept  json
-// @Produce  json
-// @Router /customer/{id} [get]
 func MakeGetCustomerByIDEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(getCustomerByIDRequest)
 		c, e := s.GetCustomerByID(ctx, req.CustomerID)
 		return getCustomerByIDResponse{
-			Customer: c,
+			Customer: &c,
 			Err:      e,
 		}, nil
 	}

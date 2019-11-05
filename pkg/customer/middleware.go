@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/go-kit/kit/log"
 	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/storage"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/proto"
 	"time"
 )
 
@@ -24,9 +25,9 @@ type loggingMiddleware struct {
 	logger log.Logger
 }
 
-func (mw loggingMiddleware) RegisterCustomer(ctx context.Context, c *Customer) (result *Customer, err error) {
+func (mw loggingMiddleware) RegisterCustomer(ctx context.Context, c *proto.Customer) (result *proto.Customer, err error) {
 	defer func(begin time.Time) {
-		mw.logger.Log("method", "RegisterCustomer", "id", c.CustomerID, "took", time.Since(begin), "err", err)
+		mw.logger.Log("method", "RegisterCustomer", "id", c.CustomerId, "took", time.Since(begin), "err", err)
 	}(time.Now())
 	return mw.next.RegisterCustomer(ctx, c)
 }
@@ -38,14 +39,14 @@ func (mw loggingMiddleware) UnregisterCustomer(ctx context.Context, cID int) (er
 	return mw.next.UnregisterCustomer(ctx, cID)
 }
 
-func (mw loggingMiddleware) GetAllCustomers(ctx context.Context, opts *storage.QueryOptions) (result []Customer, err error) {
+func (mw loggingMiddleware) GetAllCustomers(ctx context.Context, opts *storage.QueryOptions) (result []proto.Customer, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log("method", "GetAllCustomers", "limit", opts.Limit, "offset", opts.Offset, "took", time.Since(begin), "err", err)
 	}(time.Now())
 	return mw.next.GetAllCustomers(ctx, opts)
 }
 
-func (mw loggingMiddleware) GetCustomerByID(ctx context.Context, cID int) (result Customer, err error) {
+func (mw loggingMiddleware) GetCustomerByID(ctx context.Context, cID int) (result proto.Customer, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log("method", "GetCustomerByID", "id", cID, "took", time.Since(begin), "err", err)
 	}(time.Now())

@@ -7,6 +7,78 @@ import "gogoproto/gogo.proto";
 
 option go_package = "proto";
 
+option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
+    info: {
+        title: "Reservation System API";
+description
+:
+"go-kit gRPC-gateway Reservation System Demo Application"
+;
+version
+:
+"1.0"
+;
+contact
+:
+{
+name
+:
+"Tsvetan Dimitrov"
+;
+email
+:
+"tsvetan.dimitrov23@gmail.com"
+;
+}
+;
+license
+:
+{
+name
+:
+"Apache 2.0"
+;
+url
+:
+"http://www.apache.org/licenses/LICENSE-2.0.html"
+}
+}
+;
+external_docs
+:
+{
+url
+:
+"https://github.com/powerslider/go-kit-grpc-gw-reservation-system-demo"
+;
+description
+:
+"go-kit gRPC-gateway Reservation System Demo Application"
+;
+}
+;
+schemes
+:
+HTTP
+;
+host
+:
+"localhost:8081"
+;
+}
+;
+
+// Enable custom Marshal method.
+option (gogoproto.marshaler_all) = true;
+// Enable custom Unmarshal method.
+option (gogoproto.unmarshaler_all) = true;
+// Enable custom Size method (Required by Marshal and Unmarshal).
+option (gogoproto.sizer_all) = true;
+// Enable registration with golang/protobuf for the grpc-gateway.
+option (gogoproto.goproto_registration) = true;
+// Enable generation of XXX_MessageName methods for grpc-go/status.
+option (gogoproto.messagename_all) = true;
+
 
 message Customer {
     int64 customer_id = 1;

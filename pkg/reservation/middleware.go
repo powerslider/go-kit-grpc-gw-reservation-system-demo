@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/go-kit/kit/log"
 	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/storage"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/proto"
 	"time"
 )
 
@@ -24,9 +25,9 @@ type loggingMiddleware struct {
 	logger log.Logger
 }
 
-func (mw loggingMiddleware) BookReservation(ctx context.Context, cID int, r *Reservation) (result *Reservation, err error) {
+func (mw loggingMiddleware) BookReservation(ctx context.Context, cID int, r *proto.Reservation) (result *proto.Reservation, err error) {
 	defer func(begin time.Time) {
-		mw.logger.Log("method", "BookReservation", "id", r.ReservationID, "took", time.Since(begin), "err", err)
+		mw.logger.Log("method", "BookReservation", "id", r.ReservationId, "took", time.Since(begin), "err", err)
 	}(time.Now())
 	return mw.next.BookReservation(ctx, cID, r)
 }
@@ -38,14 +39,14 @@ func (mw loggingMiddleware) DiscardReservation(ctx context.Context, rID int) (er
 	return mw.next.DiscardReservation(ctx, rID)
 }
 
-func (mw loggingMiddleware) EditReservation(ctx context.Context, rID int, res *Reservation) (r Reservation, err error) {
+func (mw loggingMiddleware) EditReservation(ctx context.Context, rID int, res *proto.Reservation) (r proto.Reservation, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log("method", "EditReservation", "id", rID, "took", time.Since(begin), "err", err)
 	}(time.Now())
 	return mw.next.EditReservation(ctx, rID, res)
 }
 
-func (mw loggingMiddleware) GetReservationHistoryPerCustomer(ctx context.Context, cID int, opts *storage.QueryOptions) (result []Reservation, err error) {
+func (mw loggingMiddleware) GetReservationHistoryPerCustomer(ctx context.Context, cID int, opts *storage.QueryOptions) (result []proto.Reservation, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log("method", "GetReservationHistoryPerCustomer", "id", cID, "took", time.Since(begin), "err", err)
 	}(time.Now())

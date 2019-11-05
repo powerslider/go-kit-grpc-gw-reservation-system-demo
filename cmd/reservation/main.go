@@ -1,15 +1,18 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"github.com/go-kit/kit/log"
-	"github.com/gorilla/mux"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	_ "github.com/powerslider/go-kit-grpc-reservation-system-demo/docs"
 	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/customer"
-	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/reservation"
 	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/storage"
-	"github.com/swaggo/http-swagger"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/proto"
+	httpSwagger "github.com/swaggo/http-swagger"
+	"google.golang.org/grpc"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -32,7 +35,8 @@ import (
 func main() {
 
 	var (
-		httpAddr = flag.String("http.addr", ":8080", "HTTP listen address")
+		grpcAddr   = flag.String("grpc.addr", ":8080", "gRPC listen address")
+		grpcGWAddr = flag.String("grpcgw.addr", ":8081", "gRPC-gateway listen address")
 	)
 	flag.Parse()
 
@@ -45,14 +49,16 @@ func main() {
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC)
 	logger = log.With(logger, "caller", log.DefaultCaller)
 
-	r := mux.NewRouter()
+	grpcServer := grpc.NewServer()
+	grpcServer = initCustomerGRPCServer(grpcServer, db, logger)
+	//grpcServer = initReservationHandler(r, db, logger)
 
-	r.PathPrefix("/swagger/").Handler(httpSwagger.Handler(
-		httpSwagger.URL("http://localhost:8080/swagger/doc.json"), // The url pointing to API definition"
-	))
-
-	r = initCustomerHandler(r, db, logger)
-	r = initReservationHandler(r, db, logger)
+	// The gRPC listener mounts the Go kit gRPC server we created.
+	grpcListener, err := net.Listen("tcp", *grpcAddr)
+	if err != nil {
+		logger.Log("transport", "gRPC", "during", "Listen", "err", err)
+		os.Exit(1)
+	}
 
 	errs := make(chan error)
 	go func() {
@@ -62,23 +68,76 @@ func main() {
 	}()
 
 	go func() {
-		logger.Log("transport", "HTTP", "addr", *httpAddr)
-		errs <- http.ListenAndServe(*httpAddr, r)
+		logger.Log("transport", "gRPC", "addr", *grpcAddr)
+		errs <- grpcServer.Serve(grpcListener)
 	}()
+
+	// See https://github.com/grpc/grpc/blob/master/doc/naming.md
+	// for gRPC naming standard information.
+	dialAddr := fmt.Sprintf("passthrough://localhost/%s", *grpcAddr)
+	// Create a client connection to the gRPC Server we just started.
+	// This is where the gRPC-Gateway proxies the requests.
+	conn, err := grpc.DialContext(
+		context.Background(),
+		dialAddr,
+		grpc.WithInsecure(),
+		grpc.WithBlock(),
+	)
+	if err != nil {
+		logger.Log("Failed to dial server:", err)
+	}
+
+	jsonpb := &runtime.JSONPb{
+		//EmitDefaults: true,
+		Indent:       "  ",
+		OrigName:     false,
+	}
+	mux := http.NewServeMux()
+
+	gwmux := runtime.NewServeMux(
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, jsonpb),
+		// This is necessary to get error details properly
+		// marshalled in unary requests.
+		runtime.WithProtoErrorHandler(runtime.DefaultHTTPProtoErrorHandler),
+	)
+	err = proto.RegisterCustomerServiceHandler(context.Background(), gwmux, conn)
+	if err != nil {
+		logger.Log("Failed to register gateway:", err)
+	}
+	mux.Handle("/", gwmux)
+	err = serveSwagger(mux, *grpcGWAddr)
+	if err != nil {
+		logger.Log("Failed to serve Swagger")
+	}
+
+	gwServer := &http.Server{
+		Addr:    *grpcGWAddr,
+		Handler: mux,
+	}
+
+	gwServer.ListenAndServe()
 
 	logger.Log("exit", <-errs)
 }
 
-func initCustomerHandler(router *mux.Router, db *storage.Persistence, logger log.Logger) *mux.Router {
+func serveSwagger(mux *http.ServeMux, grpcGWAddr string) error {
+	prefix := "/swagger/"
+	swaggerURL := fmt.Sprintf("http://localhost%s/swagger/doc.json", grpcGWAddr)
+	swaggerHandlerFunc := httpSwagger.Handler(httpSwagger.URL(swaggerURL))
+	mux.Handle(prefix, swaggerHandlerFunc)
+	return nil
+}
+
+func initCustomerGRPCServer(grpcServer *grpc.Server, db *storage.Persistence, logger log.Logger) *grpc.Server {
 	r := customer.NewCustomerRepository(*db)
 	s := customer.NewCustomerService(r)
 	s = customer.LoggingMiddleware(logger)(s)
-	return customer.MakeHTTPHandler(router, s, logger)
+	return customer.MakeGRPCServer(grpcServer, s)
 }
 
-func initReservationHandler(router *mux.Router, db *storage.Persistence, logger log.Logger) *mux.Router {
-	r := reservation.NewReservationRepository(*db)
-	s := reservation.NewReservationService(r)
-	s = reservation.LoggingMiddleware(logger)(s)
-	return reservation.MakeHTTPHandler(router, s, logger)
-}
+//func initReservationHandler(router *mux.Router, db *storage.Persistence, logger log.Logger) *mux.Router {
+//	r := reservation.NewReservationRepository(*db)
+//	s := reservation.NewReservationService(r)
+//	s = reservation.LoggingMiddleware(logger)(s)
+//	return reservation.MakeHTTPHandler(router, s, logger)
+//}

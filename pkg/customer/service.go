@@ -13,16 +13,6 @@ type Service interface {
 	GetCustomerByID(ctx context.Context, cID int) (proto.Customer, error)
 }
 
-//type Customer struct {
-//	CustomerID  int    `json:"customerId" db:"cid" goqu:"skipinsert"`
-//	FirstName   string `json:"firstName" db:"first_name"`
-//	LastName    string `json:"lastName" db:"last_name"`
-//	Email       string `json:"email"`
-//	Phone       string `json:"phone"`
-//	Created     int64  `json:"created"`
-//	LastUpdated int64  `json:"lastUpdated" db:"last_updated"`
-//}
-
 type customerService struct {
 	custRepo Repository
 }
@@ -33,18 +23,18 @@ func NewCustomerService(repo Repository) Service {
 	}
 }
 
-func (s *customerService) RegisterCustomer(ctx context.Context, c *proto.Customer) (*proto.Customer, error) {
-	return s.custRepo.AddCustomer(c)
+func (s *customerService) RegisterCustomer(ctx context.Context, cust *proto.Customer) (c *proto.Customer, err error) {
+	return s.custRepo.AddCustomer(cust)
 }
 
 func (s *customerService) UnregisterCustomer(ctx context.Context, cID int) error {
 	return s.custRepo.RemoveCustomer(cID)
 }
 
-func (s *customerService) GetAllCustomers(ctx context.Context, opts *storage.QueryOptions) ([]proto.Customer, error) {
+func (s *customerService) GetAllCustomers(ctx context.Context, opts *storage.QueryOptions) (cc []proto.Customer, err error) {
 	return s.custRepo.FindAllCustomers(opts)
 }
 
-func (s *customerService) GetCustomerByID(ctx context.Context, cID int) (proto.Customer, error) {
+func (s *customerService) GetCustomerByID(ctx context.Context, cID int) (c proto.Customer, err error) {
 	return s.custRepo.FindCustomerByID(cID)
 }

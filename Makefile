@@ -35,6 +35,3 @@ generate:
 		--grpc-gateway_out=logtostderr=true:./proto \
 		--swagger_out=./docs \
 		proto/*.proto
-
-	# Generate static assets for OpenAPI UI
-	statik -m -f -src docs

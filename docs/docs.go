@@ -10,6 +10,7 @@ import (
 	"github.com/swaggo/swag"
 	"html/template"
 	"io/ioutil"
+	"path/filepath"
 )
 
 var doc = readSwaggerJSON()
@@ -24,13 +25,13 @@ type swaggerInfo struct {
 }
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
-var SwaggerInfo = swaggerInfo{ Schemes: []string{}}
+var SwaggerInfo = swaggerInfo{Schemes: []string{}}
 
 type s struct{}
 
 func (s *s) ReadDoc() string {
 	t, err := template.New("swagger_info").Funcs(template.FuncMap{
-		"marshal": func(v interface {}) string {
+		"marshal": func(v interface{}) string {
 			a, _ := json.Marshal(v)
 			return string(a)
 		},
@@ -52,7 +53,8 @@ func init() {
 }
 
 func readSwaggerJSON() string {
-	b, err := ioutil.ReadFile("swagger.json")
+	absPath, _ := filepath.Abs("docs/customer.swagger.json")
+	b, err := ioutil.ReadFile(absPath)
 	if err != nil {
 		panic(err)
 	}

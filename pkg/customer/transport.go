@@ -5,7 +5,14 @@ import (
 	gt "github.com/go-kit/kit/transport/grpc"
 	errors "github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/error"
 	"github.com/powerslider/go-kit-grpc-reservation-system-demo/proto"
+	"google.golang.org/grpc"
 )
+
+func MakeGRPCServer(grpcServer *grpc.Server, s Service) *grpc.Server {
+	endpoints := MakeServerEndpoints(s)
+	proto.RegisterCustomerServiceServer(grpcServer, newGRPCServer(endpoints))
+	return grpcServer
+}
 
 type grpcServer struct {
 	registerCustomer   gt.Handler
@@ -14,23 +21,39 @@ type grpcServer struct {
 	getCustomerByID    gt.Handler
 }
 
-func (s *grpcServer) RegisterCustomer(context.Context, *proto.RegisterCustomerRequest) (*proto.RegisterCustomerResponse, error) {
-	panic("implement me")
+func (s *grpcServer) RegisterCustomer(ctx context.Context, req *proto.RegisterCustomerRequest) (*proto.RegisterCustomerResponse, error) {
+	_, resp, err := s.registerCustomer.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*proto.RegisterCustomerResponse), nil
 }
 
-func (s *grpcServer) UnregisterCustomer(context.Context, *proto.UnregisterCustomerRequest) (*proto.UnregisterCustomerResponse, error) {
-	panic("implement me")
+func (s *grpcServer) UnregisterCustomer(ctx context.Context, req *proto.UnregisterCustomerRequest) (*proto.UnregisterCustomerResponse, error) {
+	_, resp, err := s.unregisterCustomer.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*proto.UnregisterCustomerResponse), nil
 }
 
-func (s *grpcServer) GetAllCustomers(context.Context, *proto.GetAllCustomersRequest) (*proto.GetAllCustomersResponse, error) {
-	panic("implement me")
+func (s *grpcServer) GetAllCustomers(ctx context.Context, req *proto.GetAllCustomersRequest) (*proto.GetAllCustomersResponse, error) {
+	_, resp, err := s.getAllCustomers.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*proto.GetAllCustomersResponse), nil
 }
 
-func (s *grpcServer) GetCustomerByID(context.Context, *proto.GetCustomerByIDRequest) (*proto.GetCustomerByIDResponse, error) {
-	panic("implement me")
+func (s *grpcServer) GetCustomerByID(ctx context.Context, req *proto.GetCustomerByIDRequest) (*proto.GetCustomerByIDResponse, error) {
+	_, resp, err := s.getCustomerByID.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*proto.GetCustomerByIDResponse), nil
 }
 
-func NewGRPCServer(_ context.Context, endpoint Endpoints) proto.CustomerServiceServer {
+func newGRPCServer(endpoint Endpoints) proto.CustomerServiceServer {
 	return &grpcServer{
 		registerCustomer: gt.NewServer(
 			endpoint.RegisterCustomerEndpoint,
@@ -102,7 +125,7 @@ func encodeUnregisterCustomerResponse(_ context.Context, response interface{}) (
 func encodeGetCustomerByIDResponse(_ context.Context, response interface{}) (interface{}, error) {
 	resp := response.(getCustomerByIDResponse)
 	return &proto.GetCustomerByIDResponse{
-		Customer: &resp.Customer,
+		Customer: resp.Customer,
 		Err:      errors.Err2str(resp.Err),
 	}, nil
 }

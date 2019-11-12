@@ -32,6 +32,6 @@ generate:
 		-I ${GOGO_PROTOBUF} \
 		--proto_path=${HOME}/go/src/github.com/powerslider/go-kit-grpc-reservation-system-demo \
 		--gogo_out=plugins=grpc,paths=source_relative:./proto \
-		--grpc-gateway_out=logtostderr=true:./proto \
+		--grpc-gateway_out=allow_patch_feature=false,Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types,logtostderr=true:./proto \
 		--swagger_out=./docs \
 		proto/*.proto

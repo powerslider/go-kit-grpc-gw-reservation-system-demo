@@ -39,7 +39,7 @@ func (mw loggingMiddleware) DiscardReservation(ctx context.Context, rID int) (er
 	return mw.next.DiscardReservation(ctx, rID)
 }
 
-func (mw loggingMiddleware) EditReservation(ctx context.Context, rID int, res *proto.Reservation) (r proto.Reservation, err error) {
+func (mw loggingMiddleware) EditReservation(ctx context.Context, rID int, res *proto.Reservation) (r *proto.Reservation, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log("method", "EditReservation", "id", rID, "took", time.Since(begin), "err", err)
 	}(time.Now())

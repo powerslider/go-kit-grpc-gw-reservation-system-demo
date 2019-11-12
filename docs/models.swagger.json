@@ -104,6 +104,82 @@
         ]
       }
     },
+    "/customer/{customer_id}/reservation": {
+      "post": {
+        "summary": "Book a new Reservation",
+        "description": "Book a new Reservation",
+        "operationId": "BookReservation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/BookReservationResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/BookReservationRequest"
+            }
+          }
+        ],
+        "tags": [
+          "reservation"
+        ]
+      }
+    },
+    "/customer/{customer_id}/reservations": {
+      "get": {
+        "summary": "List existing reservations per customer ordered by newest.",
+        "description": "List existing reservations per customer ordered by newest.",
+        "operationId": "GetReservationHistoryPerCustomer",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetReservationHistoryPerCustomerResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "reservation"
+        ]
+      }
+    },
     "/customers": {
       "get": {
         "summary": "List existing customers",
@@ -137,9 +213,59 @@
           "customer"
         ]
       }
+    },
+    "/reservation/{reservation_id}": {
+      "delete": {
+        "summary": "Discard an existing reservation",
+        "description": "Discard an existing reservation",
+        "operationId": "DiscardReservation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/DiscardReservationResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "reservation_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "reservation"
+        ]
+      }
     }
   },
   "definitions": {
+    "BookReservationRequest": {
+      "type": "object",
+      "properties": {
+        "customer_id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "reservation": {
+          "$ref": "#/definitions/Reservation"
+        }
+      }
+    },
+    "BookReservationResponse": {
+      "type": "object",
+      "properties": {
+        "reservation": {
+          "$ref": "#/definitions/Reservation"
+        },
+        "err": {
+          "type": "string"
+        }
+      }
+    },
     "Customer": {
       "type": "object",
       "properties": {
@@ -169,6 +295,14 @@
         }
       }
     },
+    "DiscardReservationResponse": {
+      "type": "object",
+      "properties": {
+        "err": {
+          "type": "string"
+        }
+      }
+    },
     "GetAllCustomersResponse": {
       "type": "object",
       "properties": {
@@ -194,6 +328,20 @@
         }
       }
     },
+    "GetReservationHistoryPerCustomerResponse": {
+      "type": "object",
+      "properties": {
+        "reservations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Reservation"
+          }
+        },
+        "err": {
+          "type": "string"
+        }
+      }
+    },
     "RegisterCustomerRequest": {
       "type": "object",
       "properties": {
@@ -210,6 +358,43 @@
         },
         "err": {
           "type": "string"
+        }
+      }
+    },
+    "Reservation": {
+      "type": "object",
+      "properties": {
+        "reservation_id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "seat_count": {
+          "type": "string",
+          "format": "int64"
+        },
+        "start_time": {
+          "type": "string"
+        },
+        "reservation_name": {
+          "type": "string"
+        },
+        "customer_id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "comments": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "int64"
+        },
+        "last_updated": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },

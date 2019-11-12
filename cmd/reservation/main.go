@@ -8,6 +8,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	_ "github.com/powerslider/go-kit-grpc-reservation-system-demo/docs"
 	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/customer"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/reservation"
 	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/storage"
 	"github.com/powerslider/go-kit-grpc-reservation-system-demo/proto"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -19,19 +20,6 @@ import (
 	"syscall"
 )
 
-// @title Reservation System API
-// @version 1.0
-// @description Demo service demonstrating Go-Kit.
-// @termsOfService http://swagger.io/terms/
-
-// @contact.name Tsvetan Dimitrov
-// @contact.email tsvetan.dimitrov23@gmail.com
-
-// @license.name Apache 2.0
-// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
-
-// @host localhost:8080
-// @BasePath /
 func main() {
 
 	var (
@@ -51,7 +39,7 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 	grpcServer = initCustomerGRPCServer(grpcServer, db, logger)
-	//grpcServer = initReservationHandler(r, db, logger)
+	grpcServer = initReservationGRPCServer(grpcServer, db, logger)
 
 	// The gRPC listener mounts the Go kit gRPC server we created.
 	grpcListener, err := net.Listen("tcp", *grpcAddr)
@@ -77,8 +65,9 @@ func main() {
 	dialAddr := fmt.Sprintf("passthrough://localhost/%s", *grpcAddr)
 	// Create a client connection to the gRPC Server we just started.
 	// This is where the gRPC-Gateway proxies the requests.
+	backgroundCtx := context.Background()
 	conn, err := grpc.DialContext(
-		context.Background(),
+		backgroundCtx,
 		dialAddr,
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
@@ -89,9 +78,10 @@ func main() {
 
 	jsonpb := &runtime.JSONPb{
 		//EmitDefaults: true,
-		Indent:       "  ",
-		OrigName:     false,
+		Indent:   "  ",
+		OrigName: false,
 	}
+	//runtime.HTTPError = CustomHTTPError
 	mux := http.NewServeMux()
 
 	gwmux := runtime.NewServeMux(
@@ -100,7 +90,8 @@ func main() {
 		// marshalled in unary requests.
 		runtime.WithProtoErrorHandler(runtime.DefaultHTTPProtoErrorHandler),
 	)
-	err = proto.RegisterCustomerServiceHandler(context.Background(), gwmux, conn)
+	err = proto.RegisterCustomerServiceHandler(backgroundCtx, gwmux, conn)
+	err = proto.RegisterReservationServiceHandler(backgroundCtx, gwmux, conn)
 	if err != nil {
 		logger.Log("Failed to register gateway:", err)
 	}
@@ -135,9 +126,27 @@ func initCustomerGRPCServer(grpcServer *grpc.Server, db *storage.Persistence, lo
 	return customer.MakeGRPCServer(grpcServer, s)
 }
 
-//func initReservationHandler(router *mux.Router, db *storage.Persistence, logger log.Logger) *mux.Router {
-//	r := reservation.NewReservationRepository(*db)
-//	s := reservation.NewReservationService(r)
-//	s = reservation.LoggingMiddleware(logger)(s)
-//	return reservation.MakeHTTPHandler(router, s, logger)
+func initReservationGRPCServer(grpcServer *grpc.Server, db *storage.Persistence, logger log.Logger) *grpc.Server {
+	r := reservation.NewReservationRepository(*db)
+	s := reservation.NewReservationService(r)
+	s = reservation.LoggingMiddleware(logger)(s)
+	return reservation.MakeGRPCServer(grpcServer, s)
+}
+
+//type errorBody struct {
+//	Err string `json:"error,omitempty"`
+//}
+//
+//func CustomHTTPError(ctx context.Context, _ *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, _ *http.Request, err error) {
+//	const fallback = `{"error": "failed to marshal error message"}`
+//
+//	w.Header().Set("Content-type", marshaler.ContentType())
+//	w.WriteHeader(runtime.HTTPStatusFromCode(status.Code(err)))
+//	jErr := json.NewEncoder(w).Encode(errorBody{
+//		Err: status.Convert(err).Message(),
+//	})
+//
+//	if jErr != nil {
+//		w.Write([]byte(fallback))
+//	}
 //}

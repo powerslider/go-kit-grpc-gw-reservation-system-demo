@@ -2,101 +2,139 @@ package reservation
 
 import (
 	"context"
-	"encoding/json"
-	"github.com/go-kit/kit/log"
-	httptransport "github.com/go-kit/kit/transport/http"
-	"github.com/gorilla/mux"
-	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/transport"
-	"net/http"
+	gt "github.com/go-kit/kit/transport/grpc"
+	errors "github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/error"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/proto"
+	"google.golang.org/grpc"
 )
 
-func MakeHTTPHandler(r *mux.Router, s Service, logger log.Logger) *mux.Router {
-	e := MakeServerEndpoints(s)
+func MakeGRPCServer(grpcServer *grpc.Server, s Service) *grpc.Server {
+	endpoints := MakeServerEndpoints(s)
+	proto.RegisterReservationServiceServer(grpcServer, newGRPCServer(endpoints))
+	return grpcServer
+}
 
-	options := httpjson.DefaultServerOptions(logger)
+type grpcServer struct {
+	bookReservation                  gt.Handler
+	discardReservation               gt.Handler
+	//editReservation                  gt.Handler
+	getReservationHistoryPerCustomer gt.Handler
+}
 
-	r.Methods("POST").Path("/customer/{id}/reservation").
-		Handler(httptransport.NewServer(
-			e.BookReservationEndpoint,
+func (s *grpcServer) BookReservation(ctx context.Context, req *proto.BookReservationRequest) (*proto.BookReservationResponse, error) {
+	_, resp, err := s.bookReservation.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*proto.BookReservationResponse), nil
+}
+
+func (s *grpcServer) DiscardReservation(ctx context.Context, req *proto.DiscardReservationRequest) (*proto.DiscardReservationResponse, error) {
+	_, resp, err := s.discardReservation.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*proto.DiscardReservationResponse), nil
+}
+
+//func (s *grpcServer) EditReservation(ctx context.Context, req *proto.EditReservationRequest) (*proto.EditReservationResponse, error) {
+//	_, resp, err := s.editReservation.ServeGRPC(ctx, req)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return resp.(*proto.EditReservationResponse), nil
+//}
+
+func (s *grpcServer) GetReservationHistoryPerCustomer(ctx context.Context, req *proto.GetReservationHistoryPerCustomerRequest) (*proto.GetReservationHistoryPerCustomerResponse, error) {
+	_, resp, err := s.getReservationHistoryPerCustomer.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*proto.GetReservationHistoryPerCustomerResponse), nil
+}
+
+func newGRPCServer(endpoint Endpoints) proto.ReservationServiceServer {
+	return &grpcServer{
+		bookReservation: gt.NewServer(
+			endpoint.BookReservationEndpoint,
 			decodeBookReservationRequest,
-			httpjson.EncodeResponse,
-			options...,
-		))
-
-	r.Methods("DELETE").Path("/reservation/{id}").
-		Handler(httptransport.NewServer(
-			e.DiscardReservationEndpoint,
+			encodeBookReservationResponse,
+		),
+		discardReservation: gt.NewServer(
+			endpoint.DiscardReservationEndpoint,
 			decodeDiscardReservationRequest,
-			httpjson.EncodeResponse,
-			options...,
-		))
-
-	r.Methods("PUT").Path("/reservation/{id}").
-		Handler(httptransport.NewServer(
-			e.EditReservationEndpoint,
-			decodeEditReservationRequest,
-			httpjson.EncodeResponse,
-			options...,
-		))
-
-	r.Methods("GET").Path("/customer/{id}/reservations").
-		Handler(httptransport.NewServer(
-			e.GetReservationHistoryByCustomerEndpoint,
+			encodeDiscardReservationResponse,
+		),
+		//editReservation: gt.NewServer(
+		//	endpoint.EditReservationEndpoint,
+		//	decodeEditReservationRequest,
+		//	encodeEditReservationResponse,
+		//),
+		getReservationHistoryPerCustomer: gt.NewServer(
+			endpoint.GetReservationHistoryByCustomerEndpoint,
 			decodeGetReservationHistoryPerCustomerRequest,
-			httpjson.EncodeResponse,
-			options...,
-		))
-
-	return r
+			encodeGetReservationHistoryPerCustomerResponse,
+		),
+	}
 }
 
-func decodeBookReservationRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	var req bookReservationRequest
-
-	id, err := httpjson.ParseIntPathParam(r, "id", "customer ID")
-	if err != nil {
-		return nil, err
-	}
-	req.CustomerID = id
-
-	if e := json.NewDecoder(r.Body).Decode(&req.Reservation); e != nil {
-		return nil, e
-	}
-	return req, nil
+func decodeBookReservationRequest(_ context.Context, grpcReply interface{}) (interface{}, error) {
+	reply := grpcReply.(*proto.BookReservationRequest)
+	return bookReservationRequest{
+		CustomerID: int(reply.CustomerId),
+		Reservation: reply.Reservation,
+	}, nil
 }
 
-func decodeDiscardReservationRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	id, err := httpjson.ParseIntPathParam(r, "id", "reservation ID")
-	if err != nil {
-		return nil, err
-	}
-	return discardReservationRequest{ReservationID: id}, nil
+func decodeDiscardReservationRequest(_ context.Context, grpcReply interface{}) (request interface{}, err error) {
+	reply := grpcReply.(*proto.DiscardReservationRequest)
+	return discardReservationRequest{
+		ReservationID: int(reply.ReservationId),
+	}, nil
 }
 
-func decodeEditReservationRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	var req editReservationRequest
+//func decodeEditReservationRequest(_ context.Context, grpcReply interface{}) (request interface{}, err error) {
+//	reply := grpcReply.(*proto.EditReservationRequest)
+//	return editReservationRequest{
+//		ReservationID: int(reply.ReservationId),
+//	}, nil
+//}
 
-	id, err := httpjson.ParseIntPathParam(r, "id", "reservation ID")
-	if err != nil {
-		return nil, err
-	}
-	req.ReservationID = id
-
-	if e := json.NewDecoder(r.Body).Decode(&req.Reservation); e != nil {
-		return nil, e
-	}
-	return req, nil
-}
-
-func decodeGetReservationHistoryPerCustomerRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	id, err := httpjson.ParseIntPathParam(r, "id", "customer ID")
-	if err != nil {
-		return nil, err
-	}
-
+func decodeGetReservationHistoryPerCustomerRequest(_ context.Context, grpcReply interface{}) (request interface{}, err error) {
+	reply := grpcReply.(*proto.GetReservationHistoryPerCustomerRequest)
 	return getReservationHistoryPerCustomerRequest{
-		CustomerID: id,
-		Limit:      httpjson.ParseUintQueryParam(r, "limit"),
-		Offset:     httpjson.ParseUintQueryParam(r, "offset"),
+		Limit:  uint(reply.Limit),
+		Offset: uint(reply.Offset),
+	}, nil
+}
+
+func encodeBookReservationResponse(_ context.Context, response interface{}) (interface{}, error) {
+	resp := response.(bookReservationResponse)
+	return &proto.BookReservationResponse{
+		Reservation: resp.Reservation,
+		Err:         errors.Err2str(resp.Err),
+	}, nil
+}
+
+func encodeDiscardReservationResponse(_ context.Context, response interface{}) (interface{}, error) {
+	resp := response.(discardReservationResponse)
+	return &proto.DiscardReservationResponse{
+		Err: errors.Err2str(resp.Err),
+	}, nil
+}
+
+//func encodeEditReservationResponse(_ context.Context, response interface{}) (interface{}, error) {
+//	resp := response.(editReservationResponse)
+//	return &proto.EditReservationResponse{
+//		Reservation: resp.Reservation,
+//		Err:         errors.Err2str(resp.Err),
+//	}, nil
+//}
+
+func encodeGetReservationHistoryPerCustomerResponse(_ context.Context, response interface{}) (interface{}, error) {
+	resp := response.(getReservationHistoryPerCustomerResponse)
+	return &proto.GetReservationHistoryPerCustomerResponse{
+		Reservations: resp.Reservations,
+		Err:          errors.Err2str(resp.Err),
 	}, nil
 }

@@ -33,14 +33,6 @@ type discardReservationResponse struct {
 
 func (r discardReservationResponse) HTTPError() error { return r.Err }
 
-// DiscardReservation godoc
-// @Summary Discard an existing reservation
-// @Description Discard an existing reservation
-// @Tags reservation
-// @Param id path string true "Reservation ID"
-// @Accept  json
-// @Produce  json
-// @Router /reservation/{id} [delete]
 func MakeDiscardReservationEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(discardReservationRequest)
@@ -63,15 +55,6 @@ type bookReservationResponse struct {
 
 func (r bookReservationResponse) HTTPError() error { return r.Err }
 
-// BookReservation godoc
-// @Summary Book a new Reservation
-// @Description Book a new Reservation
-// @Tags reservation
-// @Param reservation body reservation.Reservation true "New Reservation"
-// @Accept  json
-// @Produce  json
-// @Success 200 {object} reservation.Reservation
-// @Router /reservation [post]
 func MakeBookReservationEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(bookReservationRequest)
@@ -96,17 +79,6 @@ type getReservationHistoryPerCustomerResponse struct {
 
 func (r getReservationHistoryPerCustomerResponse) HTTPError() error { return r.Err }
 
-// GetReservationHistoryPerCustomer godoc
-// @Summary List existing reservations per customer ordered by newest.
-// @Description List existing reservations per customer ordered by newest.
-// @Tags reservation
-// @Param limit query int false "Reservation count limit" default(100)
-// @Param offset query int false "Reservation count offset" default(0)
-// @Param id path string true "Customer ID"
-// @Accept  json
-// @Produce  json
-// @Success 200 {array} reservation.Reservation
-// @Router /customer/{id}/reservations [get]
 func MakeGetReservationHistoryPerCustomerEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(getReservationHistoryPerCustomerRequest)
@@ -127,20 +99,12 @@ type editReservationRequest struct {
 }
 
 type editReservationResponse struct {
-	Reservation proto.Reservation `json:"reservation"`
-	Err         error             `json:"err,omitempty"`
+	Reservation *proto.Reservation `json:"reservation"`
+	Err         error              `json:"err,omitempty"`
 }
 
 func (r editReservationResponse) HTTPError() error { return r.Err }
 
-// EditReservation godoc
-// @Summary Edit an existing reservation
-// @Description Edit an existing reservation
-// @Tags reservation
-// @Param id path string true "Reservation ID"
-// @Accept  json
-// @Produce  json
-// @Router /reservation/{id} [put]
 func MakeEditReservationEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(editReservationRequest)

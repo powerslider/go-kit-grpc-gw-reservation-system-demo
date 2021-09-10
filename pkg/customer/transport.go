@@ -3,8 +3,8 @@ package customer
 import (
 	"context"
 	gt "github.com/go-kit/kit/transport/grpc"
-	errors "github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/error"
-	"github.com/powerslider/go-kit-grpc-reservation-system-demo/proto"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/gen/go/proto"
+	errors "github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/apperror"
 	"google.golang.org/grpc"
 )
 

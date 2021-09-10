@@ -2,15 +2,15 @@ package reservation
 
 import (
 	"context"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/gen/go/proto"
 	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/storage"
-	"github.com/powerslider/go-kit-grpc-reservation-system-demo/proto"
 )
 
 type Service interface {
 	BookReservation(ctx context.Context, cID int, r *proto.Reservation) (*proto.Reservation, error)
 	DiscardReservation(ctx context.Context, rID int) error
 	EditReservation(ctx context.Context, rID int, r *proto.Reservation) (*proto.Reservation, error)
-	GetReservationHistoryPerCustomer(ctx context.Context, cID int, opts *storage.QueryOptions) ([]proto.Reservation, error)
+	GetReservationHistoryPerCustomer(ctx context.Context, cID int, opts *storage.QueryOptions) ([]*proto.Reservation, error)
 }
 
 type reservationService struct {
@@ -35,6 +35,6 @@ func (s *reservationService) EditReservation(ctx context.Context, rID int, res *
 	return s.resRepo.UpdateReservation(rID, res)
 }
 
-func (s *reservationService) GetReservationHistoryPerCustomer(ctx context.Context, cID int, opts *storage.QueryOptions) ([]proto.Reservation, error) {
+func (s *reservationService) GetReservationHistoryPerCustomer(ctx context.Context, cID int, opts *storage.QueryOptions) ([]*proto.Reservation, error) {
 	return s.resRepo.FindReservationsByCustomerID(cID, opts)
 }

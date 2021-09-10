@@ -5,14 +5,15 @@ import (
 	"flag"
 	"fmt"
 	"github.com/go-kit/kit/log"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	_ "github.com/powerslider/go-kit-grpc-reservation-system-demo/docs"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/gen/go/proto"
 	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/customer"
 	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/reservation"
 	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/storage"
-	"github.com/powerslider/go-kit-grpc-reservation-system-demo/proto"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/encoding/protojson"
 	"net"
 	"net/http"
 	"os"
@@ -76,19 +77,22 @@ func main() {
 		logger.Log("Failed to dial server:", err)
 	}
 
-	jsonpb := &runtime.JSONPb{
-		//EmitDefaults: true,
-		Indent:   "  ",
-		OrigName: false,
-	}
 	//runtime.HTTPError = CustomHTTPError
 	mux := http.NewServeMux()
 
 	gwmux := runtime.NewServeMux(
-		runtime.WithMarshalerOption(runtime.MIMEWildcard, jsonpb),
-		// This is necessary to get error details properly
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+			MarshalOptions: protojson.MarshalOptions{
+				Indent:    "  ",
+				Multiline: true, // Optional, implied by presence of "Indent".
+			},
+			UnmarshalOptions: protojson.UnmarshalOptions{
+				DiscardUnknown: true,
+			},
+		}),
+		// This is necessary to get apperrors details properly
 		// marshalled in unary requests.
-		runtime.WithProtoErrorHandler(runtime.DefaultHTTPProtoErrorHandler),
+		runtime.WithErrorHandler(runtime.DefaultHTTPErrorHandler),
 	)
 	err = proto.RegisterCustomerServiceHandler(backgroundCtx, gwmux, conn)
 	err = proto.RegisterReservationServiceHandler(backgroundCtx, gwmux, conn)
@@ -134,11 +138,11 @@ func initReservationGRPCServer(grpcServer *grpc.Server, db *storage.Persistence,
 }
 
 //type errorBody struct {
-//	Err string `json:"error,omitempty"`
+//	Err string `json:"apperrors,omitempty"`
 //}
 //
-//func CustomHTTPError(ctx context.Context, _ *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, _ *http.Request, err error) {
-//	const fallback = `{"error": "failed to marshal error message"}`
+//func CustomHTTPError(ctx context.Context, _ *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, _ *http.Request, err apperrors) {
+//	const fallback = `{"apperrors": "failed to marshal apperrors message"}`
 //
 //	w.Header().Set("Content-type", marshaler.ContentType())
 //	w.WriteHeader(runtime.HTTPStatusFromCode(status.Code(err)))

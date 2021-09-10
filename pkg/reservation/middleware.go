@@ -3,8 +3,8 @@ package reservation
 import (
 	"context"
 	"github.com/go-kit/kit/log"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/gen/go/proto"
 	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/storage"
-	"github.com/powerslider/go-kit-grpc-reservation-system-demo/proto"
 	"time"
 )
 
@@ -46,7 +46,7 @@ func (mw loggingMiddleware) EditReservation(ctx context.Context, rID int, res *p
 	return mw.next.EditReservation(ctx, rID, res)
 }
 
-func (mw loggingMiddleware) GetReservationHistoryPerCustomer(ctx context.Context, cID int, opts *storage.QueryOptions) (result []proto.Reservation, err error) {
+func (mw loggingMiddleware) GetReservationHistoryPerCustomer(ctx context.Context, cID int, opts *storage.QueryOptions) (result []*proto.Reservation, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log("method", "GetReservationHistoryPerCustomer", "id", cID, "took", time.Since(begin), "err", err)
 	}(time.Now())

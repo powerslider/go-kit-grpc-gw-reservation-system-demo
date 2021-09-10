@@ -3,8 +3,8 @@ package customer
 import (
 	"context"
 	"github.com/go-kit/kit/endpoint"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/gen/go/proto"
 	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/storage"
-	"github.com/powerslider/go-kit-grpc-reservation-system-demo/proto"
 )
 
 type Endpoints struct {
@@ -31,7 +31,7 @@ type unregisterCustomerResponse struct {
 	Err error `json:"err,omitempty"`
 }
 
-func (r unregisterCustomerResponse) HTTPError() error { return r.Err }
+func (r unregisterCustomerResponse) Failed() error { return r.Err }
 
 func MakeUnregisterCustomerEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -52,7 +52,7 @@ type registerCustomerResponse struct {
 	Err      error           `json:"err,omitempty"`
 }
 
-func (r registerCustomerResponse) HTTPError() error { return r.Err }
+func (r registerCustomerResponse) Failed() error { return r.Err }
 
 func MakeRegisterCustomerEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -71,11 +71,11 @@ type getAllCustomersRequest struct {
 }
 
 type getAllCustomersResponse struct {
-	Customers []proto.Customer `json:"customers,omitempty"`
+	Customers []*proto.Customer `json:"customers,omitempty"`
 	Err       error            `json:"err,omitempty"`
 }
 
-func (r getAllCustomersResponse) HTTPError() error { return r.Err }
+func (r getAllCustomersResponse) Failed() error { return r.Err }
 
 func MakeGetAllCustomersEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -100,14 +100,14 @@ type getCustomerByIDResponse struct {
 	Err      error           `json:"err,omitempty"`
 }
 
-func (r getCustomerByIDResponse) HTTPError() error { return r.Err }
+func (r getCustomerByIDResponse) Failed() error { return r.Err }
 
 func MakeGetCustomerByIDEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(getCustomerByIDRequest)
 		c, e := s.GetCustomerByID(ctx, req.CustomerID)
 		return getCustomerByIDResponse{
-			Customer: &c,
+			Customer: c,
 			Err:      e,
 		}, nil
 	}

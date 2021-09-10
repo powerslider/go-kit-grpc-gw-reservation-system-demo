@@ -1,4 +1,4 @@
-package error
+package apperror
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ErrorType is the type of an error
+// ErrorType is the type of the error
 type ErrorType uint
 
 const (
@@ -46,7 +46,7 @@ func (e AppError) error() error {
 	return e.OriginalError
 }
 
-// AddErrorContext adds a Context to an error
+// AddContext adds a Context to an error
 func (e AppError) AddContext(field, message string) AppError {
 	context := errorContext{Field: field, Message: message}
 	e.Context = context
@@ -57,44 +57,24 @@ func (errorType ErrorType) String() string {
 	return [...]string{"UnknownError", "DBError", "ValidationError", "NotFound"}[errorType]
 }
 
-// New creates a new AppError
-func (errorType ErrorType) New(msg string) AppError {
-	return AppError{ErrorType: errorType, OriginalError: errors.New(msg)}
-}
-
-// New creates a new AppError with formatted message
-func (errorType ErrorType) Newf(msg string, args ...interface{}) AppError {
-	return AppError{ErrorType: errorType, OriginalError: fmt.Errorf(msg, args...)}
-}
-
-// Wrap creates a new wrapped error
-func (errorType ErrorType) Wrap(err error, msg string) AppError {
-	return errorType.Wrapf(err, msg)
-}
-
-// Wrap creates a new wrapped error with formatted message
-func (errorType ErrorType) Wrapf(err error, msg string, args ...interface{}) AppError {
-	return AppError{ErrorType: errorType, OriginalError: errors.Wrapf(err, msg, args...)}
-}
-
 // Error returns the mssage of a AppError
 func (e AppError) Error() string {
 	return e.OriginalError.Error()
 }
 
 // New creates a no type error
-func New(msg string) AppError {
-	return AppError{ErrorType: UnknownError, OriginalError: errors.New(msg)}
+func New(errorType ErrorType, msg string) AppError {
+	return AppError{ErrorType: errorType, OriginalError: errors.New(msg)}
 }
 
 // Newf creates a no type error with formatted message
-func Newf(msg string, args ...interface{}) AppError {
-	return AppError{ErrorType: UnknownError, OriginalError: errors.New(fmt.Sprintf(msg, args...))}
+func Newf(errorType ErrorType, msg string, args ...interface{}) AppError {
+	return AppError{ErrorType: errorType, OriginalError: errors.New(fmt.Sprintf(msg, args...))}
 }
 
 // Wrap an error with a string
-func Wrap(err error, msg string) error {
-	return Wrapf(err, msg)
+func Wrap(errorType ErrorType, err error, msg string) error {
+	return Wrapf(errorType, err, msg)
 }
 
 // Cause gives the original error
@@ -103,7 +83,7 @@ func Cause(err error) error {
 }
 
 // Wrapf an error with format string
-func Wrapf(err error, msg string, args ...interface{}) error {
+func Wrapf(errorType ErrorType, err error, msg string, args ...interface{}) error {
 	wrappedError := errors.Wrapf(err, msg, args...)
 	if customErr, ok := err.(AppError); ok {
 		return AppError{
@@ -113,7 +93,7 @@ func Wrapf(err error, msg string, args ...interface{}) error {
 		}
 	}
 
-	return AppError{ErrorType: UnknownError, OriginalError: wrappedError}
+	return AppError{ErrorType: errorType, OriginalError: wrappedError}
 }
 
 // AddErrorContext adds a Context to an error

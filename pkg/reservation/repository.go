@@ -4,9 +4,10 @@ import (
 	"github.com/doug-martin/goqu/v7"
 	"github.com/doug-martin/goqu/v7/exec"
 	"github.com/jinzhu/copier"
-	errors "github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/error"
+	"github.com/pkg/errors"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/gen/go/proto"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/apperror"
 	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/storage"
-	"github.com/powerslider/go-kit-grpc-reservation-system-demo/proto"
 	"time"
 )
 
@@ -19,14 +20,14 @@ type Entity struct {
 	Phone           string
 	Comments        string
 	Created         int64
-	LastUpdated     int64  `db:"last_updated"`
+	LastUpdated     int64 `db:"last_updated"`
 }
 
 type Repository interface {
 	AddReservation(cID int, r *proto.Reservation) (*proto.Reservation, error)
 	RemoveReservation(rID int) error
 	UpdateReservation(rID int, r *proto.Reservation) (*proto.Reservation, error)
-	FindReservationsByCustomerID(cID int, opts *storage.QueryOptions) ([]proto.Reservation, error)
+	FindReservationsByCustomerID(cID int, opts *storage.QueryOptions) ([]*proto.Reservation, error)
 }
 
 type reservationRepository struct {
@@ -51,11 +52,11 @@ func (r *reservationRepository) AddReservation(cID int, res *proto.Reservation) 
 	})
 	err = copier.Copy(&res, &entity)
 	if err != nil {
-		return nil, errors.DBError.Wrap(err, "error adding new reservation")
+		return nil, apperror.Wrap(apperror.DBError, err, "error adding new reservation")
 	}
 
 	rID, _ := result.LastInsertId()
-	res.ReservationId = int64(rID)
+	res.ReservationId = rID
 
 	return res, nil
 }
@@ -66,7 +67,7 @@ func (r *reservationRepository) RemoveReservation(rID int) error {
 	})
 
 	if err != nil {
-		return errors.DBError.Wrapf(err, "error deleting reservation with ID %d", rID)
+		return apperror.Wrapf(apperror.DBError, err, "error deleting reservation with ID %d", rID)
 	}
 	return nil
 }
@@ -88,16 +89,17 @@ func (r *reservationRepository) UpdateReservation(rID int, res *proto.Reservatio
 
 	err = copier.Copy(&result, &entity)
 	if err != nil {
-		return result, errors.DBError.Wrapf(err, "error updating reservation with ID %d", rID)
+		return result, apperror.Wrapf(apperror.DBError, err, "error updating reservation with ID %d", rID)
 	}
 
 	return result, nil
 }
 
-func (r *reservationRepository) FindReservationsByCustomerID(cID int, opts *storage.QueryOptions) (rr []proto.Reservation, err error) {
+func (r *reservationRepository) FindReservationsByCustomerID(cID int, opts *storage.QueryOptions) ([]*proto.Reservation, error) {
 	var ee []Entity
+	var rr []*proto.Reservation
 
-	err = r.db.DB.From("reservation").
+	err := r.db.DB.From("reservation").
 		Select("reservation.*").
 		Join(
 			goqu.T("customer"),
@@ -115,12 +117,12 @@ func (r *reservationRepository) FindReservationsByCustomerID(cID int, opts *stor
 		if err != nil {
 			break
 		}
-		r.ReservationId = int64(entity.ReservationID) 
-		rr = append(rr, r)
+		r.ReservationId = int64(entity.ReservationID)
+		rr = append(rr, &r)
 	}
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "error fetching reservations for customer with ID %d", cID)
+		return nil, errors.Wrapf(err, "apperrors fetching reservations for customer with ID %d", cID)
 	}
 	return rr, nil
 }

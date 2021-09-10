@@ -3,8 +3,8 @@ package reservation
 import (
 	"context"
 	"github.com/go-kit/kit/endpoint"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/gen/go/proto"
 	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/storage"
-	"github.com/powerslider/go-kit-grpc-reservation-system-demo/proto"
 )
 
 type Endpoints struct {
@@ -31,7 +31,7 @@ type discardReservationResponse struct {
 	Err error `json:"err,omitempty"`
 }
 
-func (r discardReservationResponse) HTTPError() error { return r.Err }
+func (r discardReservationResponse) Failed() error { return r.Err }
 
 func MakeDiscardReservationEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -53,7 +53,7 @@ type bookReservationResponse struct {
 	Err         error              `json:"err,omitempty"`
 }
 
-func (r bookReservationResponse) HTTPError() error { return r.Err }
+func (r bookReservationResponse) Failed() error { return r.Err }
 
 func MakeBookReservationEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -73,11 +73,11 @@ type getReservationHistoryPerCustomerRequest struct {
 }
 
 type getReservationHistoryPerCustomerResponse struct {
-	Reservations []proto.Reservation `json:"reservations,omitempty"`
+	Reservations []*proto.Reservation `json:"reservations,omitempty"`
 	Err          error               `json:"err,omitempty"`
 }
 
-func (r getReservationHistoryPerCustomerResponse) HTTPError() error { return r.Err }
+func (r getReservationHistoryPerCustomerResponse) Failed() error { return r.Err }
 
 func MakeGetReservationHistoryPerCustomerEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -103,7 +103,7 @@ type editReservationResponse struct {
 	Err         error              `json:"err,omitempty"`
 }
 
-func (r editReservationResponse) HTTPError() error { return r.Err }
+func (r editReservationResponse) Failed() error { return r.Err }
 
 func MakeEditReservationEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {

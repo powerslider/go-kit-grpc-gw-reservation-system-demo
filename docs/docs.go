@@ -53,7 +53,7 @@ func init() {
 }
 
 func readSwaggerJSON() string {
-	absPath, _ := filepath.Abs("docs/models.swagger.json")
+	absPath, _ := filepath.Abs("gen/openapiv2/proto/models.swagger.json")
 	b, err := ioutil.ReadFile(absPath)
 	if err != nil {
 		panic(err)

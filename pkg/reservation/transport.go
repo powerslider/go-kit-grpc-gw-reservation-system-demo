@@ -3,8 +3,8 @@ package reservation
 import (
 	"context"
 	gt "github.com/go-kit/kit/transport/grpc"
-	errors "github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/error"
-	"github.com/powerslider/go-kit-grpc-reservation-system-demo/proto"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/gen/go/proto"
+	errors "github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/apperror"
 	"google.golang.org/grpc"
 )
 
@@ -37,7 +37,7 @@ func (s *grpcServer) DiscardReservation(ctx context.Context, req *proto.DiscardR
 	return resp.(*proto.DiscardReservationResponse), nil
 }
 
-//func (s *grpcServer) EditReservation(ctx context.Context, req *proto.EditReservationRequest) (*proto.EditReservationResponse, error) {
+//func (s *grpcServer) EditReservation(ctx context.Context, req *proto.EditReservationRequest) (*proto.EditReservationResponse, apperrors) {
 //	_, resp, err := s.editReservation.ServeGRPC(ctx, req)
 //	if err != nil {
 //		return nil, err
@@ -93,7 +93,7 @@ func decodeDiscardReservationRequest(_ context.Context, grpcReply interface{}) (
 	}, nil
 }
 
-//func decodeEditReservationRequest(_ context.Context, grpcReply interface{}) (request interface{}, err error) {
+//func decodeEditReservationRequest(_ context.Context, grpcReply interface{}) (request interface{}, err apperrors) {
 //	reply := grpcReply.(*proto.EditReservationRequest)
 //	return editReservationRequest{
 //		ReservationID: int(reply.ReservationId),
@@ -123,7 +123,7 @@ func encodeDiscardReservationResponse(_ context.Context, response interface{}) (
 	}, nil
 }
 
-//func encodeEditReservationResponse(_ context.Context, response interface{}) (interface{}, error) {
+//func encodeEditReservationResponse(_ context.Context, response interface{}) (interface{}, apperrors) {
 //	resp := response.(editReservationResponse)
 //	return &proto.EditReservationResponse{
 //		Reservation: resp.Reservation,

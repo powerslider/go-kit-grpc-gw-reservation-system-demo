@@ -4,9 +4,9 @@ import (
 	"github.com/doug-martin/goqu/v7"
 	"github.com/doug-martin/goqu/v7/exec"
 	"github.com/jinzhu/copier"
-	errors "github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/error"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/gen/go/proto"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/apperror"
 	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/storage"
-	"github.com/powerslider/go-kit-grpc-reservation-system-demo/proto"
 	"time"
 )
 
@@ -28,8 +28,8 @@ type Entity struct {
 type Repository interface {
 	AddCustomer(c *proto.Customer) (*proto.Customer, error)
 	RemoveCustomer(cID int) error
-	FindAllCustomers(opts *storage.QueryOptions) ([]proto.Customer, error)
-	FindCustomerByID(cID int) (proto.Customer, error)
+	FindAllCustomers(opts *storage.QueryOptions) ([]*proto.Customer, error)
+	FindCustomerByID(cID int) (*proto.Customer, error)
 }
 
 type customerRepository struct {
@@ -53,7 +53,7 @@ func (r *customerRepository) AddCustomer(c *proto.Customer) (*proto.Customer, er
 	})
 	err = copier.Copy(&c, &entity)
 	if err != nil {
-		return nil, errors.DBError.Wrap(err, "error adding new customer")
+		return nil, apperror.Wrap(apperror.DBError, err, "error adding new customer")
 	}
 
 	cID, _ := result.LastInsertId()
@@ -68,24 +68,25 @@ func (r *customerRepository) RemoveCustomer(cID int) error {
 	})
 
 	if err != nil {
-		return errors.DBError.Wrapf(err, "error deleting customers with id %d", cID)
+		return apperror.Wrapf(apperror.DBError, err, "error deleting customers with id %d", cID)
 	}
 	return nil
 }
 
-func (r *customerRepository) FindAllCustomers(opts *storage.QueryOptions) (cc []proto.Customer, err error) {
+func (r *customerRepository) FindAllCustomers(opts *storage.QueryOptions) ([]*proto.Customer, error) {
 	if opts.Limit == 0 {
 		opts.Limit = defaultLimit
 	}
 
 	var ee []Entity
-	err = r.db.DB.From("customer").
+	var cc []*proto.Customer
+	err := r.db.DB.From("customer").
 		Limit(opts.Limit).
 		Offset(opts.Offset).
 		ScanStructs(&ee)
 
 	for _, entity := range ee {
-		var c proto.Customer
+		var c *proto.Customer
 		err = copier.Copy(&c, &entity)
 		if err != nil {
 			break
@@ -95,24 +96,25 @@ func (r *customerRepository) FindAllCustomers(opts *storage.QueryOptions) (cc []
 	}
 
 	if err != nil {
-		return nil, errors.DBError.Wrapf(err, "error getting all customers")
+		return nil, apperror.Wrapf(apperror.DBError, err, "error getting all customers")
 	}
 	return cc, nil
 }
 
-func (r *customerRepository) FindCustomerByID(cID int) (c proto.Customer, err error) {
+func (r *customerRepository) FindCustomerByID(cID int) (*proto.Customer, error) {
 	var entity Entity
+	var c *proto.Customer
 	found, err := r.db.DB.From("customer").Where(
 		goqu.C("cid").Eq(cID),
 	).ScanStruct(&entity)
 
 	if !found {
-		return c, errors.NotFound.Newf("customer with ID %d not found", cID).
+		return nil, apperror.Newf(apperror.NotFound, "customer with ID %d not found", cID).
 			AddContext("CustomerID", "non existent ID")
 	}
 	err = copier.Copy(&c, &entity)
 	if err != nil {
-		return c, errors.DBError.Wrapf(err, "error getting customer with ID %d", cID)
+		return nil, apperror.Wrapf(apperror.DBError, err, "error getting customer with ID %d", cID)
 	}
 	c.CustomerId = int64(entity.CustomerID)
 

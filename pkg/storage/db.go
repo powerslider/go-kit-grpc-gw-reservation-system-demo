@@ -7,7 +7,7 @@ import (
 	_ "github.com/doug-martin/goqu/v7/dialect/sqlite3"
 	"github.com/doug-martin/goqu/v7/exec"
 	_ "github.com/mattn/go-sqlite3"
-	errors "github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/error"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/apperror"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -29,7 +29,7 @@ func NewDB(dbName string) (*Persistence, error) {
 
 	db, err := sql.Open("sqlite3", storageFile)
 	if err != nil {
-		return nil, errors.DBError.Wrapf(err, "error initializing %s database", dbName)
+		return nil, apperror.Wrapf(apperror.DBError, err, "error initializing %s database", dbName)
 	}
 
 	if !fileExists(storageFile) {
@@ -74,14 +74,14 @@ func fileExists(filename string) bool {
 func createSchema(db *sql.DB, dbName string) error {
 	file, err := ioutil.ReadFile("sql/reservations.sql")
 	if err != nil {
-		return errors.DBError.Wrapf(err, "error initializing %s database model", dbName)
+		return apperror.Wrapf(apperror.DBError, err, "error initializing %s database model", dbName)
 	}
 
 	queries := strings.Split(string(file), ";\n")
 	for _, q := range queries {
 		_, err := db.Exec(q)
 		if err != nil {
-			return errors.DBError.Wrapf(err, "error executing DDL query: %s", q)
+			return apperror.Wrapf(apperror.DBError, err, "error executing DDL query: %s", q)
 		}
 	}
 

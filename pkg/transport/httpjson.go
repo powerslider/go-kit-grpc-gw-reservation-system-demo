@@ -3,32 +3,27 @@ package httpjson
 import (
 	"context"
 	"encoding/json"
+	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/transport"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
-	errors "github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/error"
+	"github.com/powerslider/go-kit-grpc-reservation-system-demo/pkg/apperror"
 	"net/http"
 	"strconv"
 )
 
-// HTTPErrorer is implemented by all concrete response types that may contain
-// errors. It allows us to change the HTTP response code without needing to
-// trigger an endpoint (transport-level) error.
-type HTTPErrorer interface {
-	HTTPError() error
-}
 
 // EncodeResponse is the common method to encode all response types to the
 // client. Since we're using JSON, there's no reason to provide anything more specific.
 // There is also the option to specialize on a per-response (per-method) basis.
 func EncodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	e, ok := response.(HTTPErrorer)
-	resErr := e.HTTPError()
+	e, ok := response.(endpoint.Failer)
+	resErr := e.Failed()
 
 	if ok && resErr != nil {
-		// Not a Go kit transport error, but a business-logic error.
-		// Provide those as HTTP errors.
+		// Not a Go kit transport apperrors, but a business-logic appapperror.
+		// Provide those as HTTP apperror.
 		EncodeError(ctx, resErr, w)
 		return nil
 	}
@@ -38,13 +33,13 @@ func EncodeResponse(ctx context.Context, w http.ResponseWriter, response interfa
 
 func EncodeError(_ context.Context, err error, w http.ResponseWriter) {
 	if err == nil {
-		panic("encodeError with nil error")
+		panic("encodeError with nil apperrors")
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(codeFrom(err))
 
 	if e := json.NewEncoder(w).Encode(map[string]interface{}{
-		"error": err,
+		"errors": err,
 	}); e != nil {
 		panic(err)
 	}
@@ -77,7 +72,7 @@ func ParseIntPathParam(req *http.Request, paramName string, paramDesc string) (i
 	vars := mux.Vars(req)
 	id, ok := vars[paramName]
 	if !ok {
-		return 0, errors.ValidationError.Newf("missing or invalid %s %s", paramDesc, id)
+		return 0, apperror.Newf(apperror.ValidationError, "missing or invalid %s %s", paramDesc, id)
 	}
 	p, _ := strconv.ParseInt(id, 10, 64)
 
@@ -91,10 +86,10 @@ func ParseUintQueryParam(req *http.Request, paramName string) uint {
 }
 
 func codeFrom(err error) int {
-	customErr := err.(errors.AppError)
+	customErr := err.(apperror.AppError)
 
 	switch customErr.ErrorType {
-	case errors.NotFound:
+	case apperror.NotFound:
 		return http.StatusNotFound
 	// case ErrAlreadyExists, ErrInconsistentIDs:
 	// 	return http.StatusBadRequest

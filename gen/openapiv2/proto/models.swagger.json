@@ -1,0 +1,484 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Reservation System API",
+    "description": "go-kit gRPC-gateway Reservation System Demo Application",
+    "version": "1.0",
+    "contact": {
+      "name": "Tsvetan Dimitrov",
+      "email": "tsvetan.dimitrov23@gmail.com"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "tags": [
+    {
+      "name": "CustomerService"
+    },
+    {
+      "name": "ReservationService"
+    }
+  ],
+  "host": "localhost:8081",
+  "schemes": [
+    "http"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/customer": {
+      "post": {
+        "summary": "Register a new Customer",
+        "description": "Register a new Customer",
+        "operationId": "CustomerService_RegisterCustomer",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/RegisterCustomerResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RegisterCustomerRequest"
+            }
+          }
+        ],
+        "tags": [
+          "customer"
+        ]
+      }
+    },
+    "/customer/{customerId}": {
+      "get": {
+        "summary": "Get an existing customer",
+        "description": "Get an existing customer",
+        "operationId": "CustomerService_GetCustomerByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetCustomerByIDResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "customer"
+        ]
+      },
+      "delete": {
+        "summary": "Unregister an existing customer",
+        "description": "Unregister an existing customer",
+        "operationId": "CustomerService_UnregisterCustomer",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/UnregisterCustomerResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "customer"
+        ]
+      }
+    },
+    "/customer/{customerId}/reservation": {
+      "post": {
+        "summary": "Book a new Reservation",
+        "description": "Book a new Reservation",
+        "operationId": "ReservationService_BookReservation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/BookReservationResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "reservation": {
+                  "$ref": "#/definitions/Reservation"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "reservation"
+        ]
+      }
+    },
+    "/customer/{customerId}/reservations": {
+      "get": {
+        "summary": "List existing reservations per customer ordered by newest.",
+        "description": "List existing reservations per customer ordered by newest.",
+        "operationId": "ReservationService_GetReservationHistoryPerCustomer",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetReservationHistoryPerCustomerResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "reservation"
+        ]
+      }
+    },
+    "/customers": {
+      "get": {
+        "summary": "List existing customers",
+        "description": "List existing customers",
+        "operationId": "CustomerService_GetAllCustomers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetAllCustomersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "customer"
+        ]
+      }
+    },
+    "/reservation/{reservationId}": {
+      "delete": {
+        "summary": "Discard an existing reservation",
+        "description": "Discard an existing reservation",
+        "operationId": "ReservationService_DiscardReservation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/DiscardReservationResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "reservationId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "reservation"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "BookReservationResponse": {
+      "type": "object",
+      "properties": {
+        "reservation": {
+          "$ref": "#/definitions/Reservation"
+        },
+        "err": {
+          "type": "string"
+        }
+      }
+    },
+    "Customer": {
+      "type": "object",
+      "properties": {
+        "customerId": {
+          "type": "string",
+          "format": "int64"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "int64"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "DiscardReservationResponse": {
+      "type": "object",
+      "properties": {
+        "err": {
+          "type": "string"
+        }
+      }
+    },
+    "GetAllCustomersResponse": {
+      "type": "object",
+      "properties": {
+        "customers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Customer"
+          }
+        },
+        "err": {
+          "type": "string"
+        }
+      }
+    },
+    "GetCustomerByIDResponse": {
+      "type": "object",
+      "properties": {
+        "customer": {
+          "$ref": "#/definitions/Customer"
+        },
+        "err": {
+          "type": "string"
+        }
+      }
+    },
+    "GetReservationHistoryPerCustomerResponse": {
+      "type": "object",
+      "properties": {
+        "reservations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Reservation"
+          }
+        },
+        "err": {
+          "type": "string"
+        }
+      }
+    },
+    "RegisterCustomerRequest": {
+      "type": "object",
+      "properties": {
+        "customer": {
+          "$ref": "#/definitions/Customer"
+        }
+      }
+    },
+    "RegisterCustomerResponse": {
+      "type": "object",
+      "properties": {
+        "customer": {
+          "$ref": "#/definitions/Customer"
+        },
+        "err": {
+          "type": "string"
+        }
+      }
+    },
+    "Reservation": {
+      "type": "object",
+      "properties": {
+        "reservationId": {
+          "type": "string",
+          "format": "int64"
+        },
+        "seatCount": {
+          "type": "string",
+          "format": "int64"
+        },
+        "startTime": {
+          "type": "string"
+        },
+        "reservationName": {
+          "type": "string"
+        },
+        "customerId": {
+          "type": "string",
+          "format": "int64"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "comments": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "int64"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "UnregisterCustomerResponse": {
+      "type": "object",
+      "properties": {
+        "err": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  },
+  "externalDocs": {
+    "description": "go-kit gRPC-gateway Reservation System Demo Application",
+    "url": "https://github.com/powerslider/go-kit-grpc-gw-reservation-system-demo"
+  }
+}

@@ -1,7 +1,3 @@
-GRPC_GW_GOOGLEAPIS=${GOPATH}/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis
-GRPC_GW_SWAGGER=${GOPATH}/src/github.com/grpc-ecosystem/grpc-gateway
-GOGO_PROTOBUF=${GOPATH}/src/github.com/gogo/protobuf
-
 all: clean test doc build
 
 doc:
@@ -25,13 +21,4 @@ clean:
 	@rm -rf bin/*
 
 generate:
-	protoc \
-		-I proto \
-		-I ${GRPC_GW_GOOGLEAPIS} \
-		-I ${GRPC_GW_SWAGGER} \
-		-I ${GOGO_PROTOBUF} \
-		--proto_path=${HOME}/go/src/github.com/powerslider/go-kit-grpc-reservation-system-demo \
-		--gogo_out=plugins=grpc,paths=source_relative:./proto \
-		--grpc-gateway_out=allow_patch_feature=false,Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types,logtostderr=true:./proto \
-		--swagger_out=./docs \
-		proto/*.proto
+	buf generate

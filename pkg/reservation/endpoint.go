@@ -74,7 +74,7 @@ type getReservationHistoryPerCustomerRequest struct {
 
 type getReservationHistoryPerCustomerResponse struct {
 	Reservations []*proto.Reservation `json:"reservations,omitempty"`
-	Err          error               `json:"err,omitempty"`
+	Err          error                `json:"err,omitempty"`
 }
 
 func (r getReservationHistoryPerCustomerResponse) Failed() error { return r.Err }

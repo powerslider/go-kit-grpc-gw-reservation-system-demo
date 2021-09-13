@@ -13,8 +13,6 @@ import (
 	"path/filepath"
 )
 
-var doc = readSwaggerJSON()
-
 type swaggerInfo struct {
 	Version     string
 	Host        string
@@ -30,6 +28,7 @@ var SwaggerInfo = swaggerInfo{Schemes: []string{}}
 type s struct{}
 
 func (s *s) ReadDoc() string {
+	doc, err := readSwaggerJSON()
 	t, err := template.New("swagger_info").Funcs(template.FuncMap{
 		"marshal": func(v interface{}) string {
 			a, _ := json.Marshal(v)
@@ -52,12 +51,8 @@ func init() {
 	swag.Register(swag.Name, &s{})
 }
 
-func readSwaggerJSON() string {
+func readSwaggerJSON() (string, error) {
 	absPath, _ := filepath.Abs("gen/openapiv2/proto/models.swagger.json")
 	b, err := ioutil.ReadFile(absPath)
-	if err != nil {
-		panic(err)
-	}
-
-	return string(b)
+	return string(b), err
 }
